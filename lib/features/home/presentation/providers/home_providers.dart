@@ -87,7 +87,7 @@ List<CameraModel> _getMockCameras() {
   return [
     CameraModel(
       id: '1',
-      name: 'CCTV Feed (MJPEG)',
+      name: 'Front Door (MJPEG)',
       streamUrl: 'http://208.193.47.61/mjpg/video.mjpg',
       isOnline: true,
       isRecording: true,
@@ -98,7 +98,7 @@ List<CameraModel> _getMockCameras() {
     ),
     CameraModel(
       id: '2',
-      name: 'HLS Stream (Demo)',
+      name: 'Back Yard (HLS)',
       streamUrl: 'https://ms7.mx-cd.net/dtv-11/198-989148/1Twente_TV.smil/chunklist_w954512639_b4292608_slNLD.m3u8',
       isOnline: true,
       isRecording: false,

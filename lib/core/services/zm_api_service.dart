@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
+import 'dart:math';
 
 import '../../features/home/domain/models/camera_model.dart';
 import '../../features/events/domain/models/event_model.dart';
@@ -212,6 +213,44 @@ class ZmApiService {
       default:
         return CameraFunction.monitor;
     }
+  }
+
+  /// Generate connection key for stream control (based on original zmNinja genConnKey)
+  String generateConnectionKey() {
+    final random = Random();
+    return (100000 + random.nextInt(900000)).toString();
+  }
+
+  /// Build stream URL with connection key and parameters (based on original zmNinja)
+  String buildStreamUrl({
+    required String baseUrl,
+    required String cameraId,
+    String? connKey,
+    int maxFps = 5,
+    String mode = 'jpeg',
+    int scale = 100,
+  }) {
+    final uri = Uri.parse(baseUrl);
+    final queryParams = Map<String, String>.from(uri.queryParameters);
+    
+    // Add monitor ID
+    queryParams['mid'] = cameraId;
+    
+    // Add connection key for stream control
+    if (connKey != null) {
+      queryParams['connkey'] = connKey;
+    }
+    
+    // Add FPS limiting for bandwidth management
+    queryParams['maxfps'] = maxFps.toString();
+    
+    // Add stream mode (jpeg for live, single for snapshots)
+    queryParams['mode'] = mode;
+    
+    // Add scale parameter for quality control
+    queryParams['scale'] = scale.toString();
+    
+    return uri.replace(queryParameters: queryParams).toString();
   }
 
   /// Build stream URL for camera
