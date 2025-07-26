@@ -76,6 +76,9 @@ class ZmNinjaApp extends ConsumerWidget {
       // Router configuration for navigation
       routerConfig: router,
       
+      // Global navigator key for notification navigation
+      navigatorKey: navigatorKey,
+      
       // Localization support (placeholder for future implementation)
       // locale: const Locale('en', 'US'),
       // localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -83,3 +86,6 @@ class ZmNinjaApp extends ConsumerWidget {
     );
   }
 }
+
+/// Global navigator key for navigation from notification handlers
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();

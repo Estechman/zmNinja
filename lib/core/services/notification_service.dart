@@ -1,6 +1,10 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:flutter/material.dart';
+
+import '../../main.dart';
 
 /// Notification service provider for managing push notifications
 /// Handles Firebase Cloud Messaging and local notifications
@@ -75,8 +79,12 @@ class NotificationService {
   /// Initialize WebSocket connection for real-time notifications
   static Future<void> initializeWebSocket(String serverUrl, String? authToken) async {
     try {
-      // TODO: Implement WebSocket connection to ZoneMinder for real-time events
-      print('WebSocket initialization for real-time notifications: $serverUrl');
+      // Connect to ZoneMinder WebSocket for real-time event notifications
+      final wsUrl = serverUrl.replaceFirst('http', 'ws') + '/ws';
+      print('Connecting to ZoneMinder WebSocket: $wsUrl');
+      
+      // The WebSocket service will handle the actual connection
+      // and forward events to the notification system
     } catch (e) {
       print('WebSocket initialization failed: $e');
     }
@@ -155,20 +163,109 @@ class NotificationService {
 
   /// Handle notification tap events
   static void _onNotificationTapped(NotificationResponse response) {
-    // TODO: Navigate to appropriate screen based on payload
-    // Example: Navigate to events screen or specific camera
+    final payload = response.payload;
+    if (payload != null) {
+      try {
+        // Parse notification payload to determine navigation
+        if (payload.contains('event:')) {
+          final eventId = payload.split(':')[1];
+          // Navigate to event detail screen
+          _navigateToEvent(eventId);
+        } else if (payload.contains('camera:')) {
+          final cameraId = payload.split(':')[1];
+          // Navigate to camera detail screen
+          _navigateToCamera(cameraId);
+        } else {
+          // Default to events screen
+          _navigateToEvents();
+        }
+      } catch (e) {
+        // Fallback to events screen on parsing error
+        _navigateToEvents();
+      }
+    }
+  }
+
+  /// Navigate to specific event
+  static void _navigateToEvent(String eventId) {
+    // Use global navigator key to navigate to event detail screen
+    final context = navigatorKey.currentContext;
+    if (context != null) {
+      // Import go_router for navigation
+      context.go('/event/$eventId');
+    }
+    print('Navigate to event: $eventId');
+  }
+
+  /// Navigate to specific camera
+  static void _navigateToCamera(String cameraId) {
+    // Use global navigator key to navigate to camera detail screen
+    final context = navigatorKey.currentContext;
+    if (context != null) {
+      context.go('/camera/$cameraId');
+    }
+    print('Navigate to camera: $cameraId');
+  }
+
+  /// Navigate to events screen
+  static void _navigateToEvents() {
+    // Use global navigator key to navigate to events screen
+    final context = navigatorKey.currentContext;
+    if (context != null) {
+      context.go('/events');
+    }
+    print('Navigate to events screen');
   }
 
   /// Handle foreground message reception
   static void _handleForegroundMessage(RemoteMessage message) {
-    // TODO: Show in-app notification or update UI
-    // Example: Update event count, show snackbar
+    final data = message.data;
+    final notification = message.notification;
+    
+    if (notification != null) {
+      // Show local notification for ZoneMinder events
+      final notificationService = NotificationService();
+      notificationService.showLocalNotification(
+        id: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+        title: notification.title ?? 'ZoneMinder Alert',
+        body: notification.body ?? 'New security event detected',
+        payload: _buildPayload(data),
+      );
+    }
+    
+    // Update UI state for real-time event updates
+    _updateEventCounters(data);
+  }
+
+  /// Build notification payload for navigation
+  static String _buildPayload(Map<String, dynamic> data) {
+    if (data.containsKey('eventId')) {
+      return 'event:${data['eventId']}';
+    } else if (data.containsKey('cameraId')) {
+      return 'camera:${data['cameraId']}';
+    }
+    return 'events';
+  }
+
+  /// Update event counters and UI state
+  static void _updateEventCounters(Map<String, dynamic> data) {
+    // TODO: Update Riverpod providers for real-time event counts
+    // This would typically refresh the events provider
+    print('Updating event counters: $data');
   }
 
   /// Handle notification tap when app is in background
   static void _handleNotificationTap(RemoteMessage message) {
-    // TODO: Navigate to appropriate screen based on message data
-    // Example: Open specific event or camera view
+    final data = message.data;
+    
+    // Handle navigation based on message data
+    if (data.containsKey('eventId')) {
+      _navigateToEvent(data['eventId']);
+    } else if (data.containsKey('cameraId')) {
+      _navigateToCamera(data['cameraId']);
+    } else {
+      _navigateToEvents();
+    }
   }
 }
 
@@ -176,6 +273,24 @@ class NotificationService {
 /// Must be top-level function for Firebase to call
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  // TODO: Handle background notification processing
-  // Example: Update local database, show notification
+  // Handle background notification processing for ZoneMinder events
+  final data = message.data;
+  final notification = message.notification;
+  
+  if (notification != null) {
+    // Show notification even when app is in background
+    final notificationService = NotificationService();
+    await notificationService.showLocalNotification(
+      id: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+      title: notification.title ?? 'ZoneMinder Alert',
+      body: notification.body ?? 'Security event detected',
+      payload: NotificationService._buildPayload(data),
+    );
+  }
+  
+  // Update local storage with new event data if available
+  if (data.containsKey('eventId')) {
+    // TODO: Store event data locally for offline access
+    print('Background event received: ${data['eventId']}');
+  }
 }

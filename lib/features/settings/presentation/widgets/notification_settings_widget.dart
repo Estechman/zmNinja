@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/models/app_settings_model.dart';
 import '../providers/settings_providers.dart';
+import '../../../notifications/presentation/providers/notification_providers.dart';
 
 /// Notification settings widget for push notification preferences
 /// Manages notification options, sounds, and quiet hours
@@ -17,10 +18,50 @@ class NotificationSettingsWidget extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final notificationSettings = settings.notificationSettings;
+    final notificationPermissions = ref.watch(notificationPermissionsProvider);
+    final fcmToken = ref.watch(fcmTokenProvider);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Notification permissions status
+        notificationPermissions.when(
+          data: (hasPermission) => Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: hasPermission ? Colors.green.withValues(alpha: 0.1) : Colors.orange.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: hasPermission ? Colors.green.withValues(alpha: 0.3) : Colors.orange.withValues(alpha: 0.3),
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  hasPermission ? Icons.check_circle : Icons.warning,
+                  color: hasPermission ? Colors.green : Colors.orange,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    hasPermission 
+                      ? 'Push notifications enabled'
+                      : 'Push notification permissions required',
+                    style: TextStyle(
+                      color: hasPermission ? Colors.green : Colors.orange,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          loading: () => const SizedBox.shrink(),
+          error: (_, __) => const SizedBox.shrink(),
+        ),
+
         // Enable notifications
         SwitchListTile(
           title: const Text('Enable Notifications'),
@@ -153,6 +194,58 @@ class NotificationSettingsWidget extends ConsumerWidget {
                 onTap: () => _showCameraSelection(context, ref, notificationSettings),
               ),
             ],
+          ),
+
+          const Divider(),
+
+          // Test notification button
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8.0),
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: notificationSettings.enabled ? () {
+                  // Test notification using the notification service
+                  final notificationService = ref.read(notificationServiceProvider);
+                  notificationService.showLocalNotification(
+                    id: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+                    title: 'Test Notification',
+                    body: 'This is a test notification from zmNinja',
+                    payload: 'test',
+                  );
+                  
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Test notification sent'),
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                } : null,
+                icon: const Icon(Icons.notifications_active),
+                label: const Text('Test Notification'),
+              ),
+            ),
+          ),
+
+          // FCM Token info (for debugging)
+          fcmToken.when(
+            data: (token) => token != null ? ExpansionTile(
+              title: const Text('Device Token'),
+              subtitle: const Text('For debugging push notifications'),
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: SelectableText(
+                    token,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      fontFamily: 'monospace',
+                    ),
+                  ),
+                ),
+              ],
+            ) : const SizedBox.shrink(),
+            loading: () => const SizedBox.shrink(),
+            error: (_, __) => const SizedBox.shrink(),
           ),
         ],
       ],
