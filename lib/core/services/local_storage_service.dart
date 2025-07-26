@@ -5,6 +5,8 @@ import 'dart:convert';
 
 import '../../features/home/domain/models/camera_model.dart';
 import '../../features/events/domain/models/event_model.dart';
+import '../../features/home/presentation/providers/home_providers.dart';
+import '../../features/events/presentation/providers/events_providers.dart';
 
 /// Provider for local storage service
 final localStorageServiceProvider = Provider<LocalStorageService>((ref) {
@@ -258,6 +260,88 @@ class LocalStorageService {
     batch.delete('events');
     
     await batch.commit();
+  }
+
+  /// Get grid layout preference
+  Future<GridLayout?> getGridLayout() async {
+    try {
+      final layoutName = await getUserPreference<String>('grid_layout');
+      if (layoutName != null) {
+        return GridLayout.values.firstWhere(
+          (layout) => layout.name == layoutName,
+          orElse: () => GridLayout.auto,
+        );
+      }
+    } catch (e) {
+      // Return null if preference doesn't exist or parsing fails
+    }
+    return null;
+  }
+
+  /// Save grid layout preference
+  Future<void> saveGridLayout(GridLayout layout) async {
+    await setUserPreference('grid_layout', layout.name);
+  }
+
+  /// Get events view mode preference
+  Future<EventsViewMode?> getEventsViewMode() async {
+    try {
+      final modeName = await getUserPreference<String>('events_view_mode');
+      if (modeName != null) {
+        return EventsViewMode.values.firstWhere(
+          (mode) => mode.name == modeName,
+          orElse: () => EventsViewMode.list,
+        );
+      }
+    } catch (e) {
+      // Return null if preference doesn't exist or parsing fails
+    }
+    return null;
+  }
+
+  /// Save events view mode preference
+  Future<void> saveEventsViewMode(EventsViewMode mode) async {
+    await setUserPreference('events_view_mode', mode.name);
+  }
+
+  /// Get events filters preference
+  Future<EventsFilters?> getEventsFilters() async {
+    try {
+      final filtersMap = await getUserPreference<Map<String, dynamic>>('events_filters');
+      if (filtersMap != null) {
+        return EventsFilters(
+          startDate: filtersMap['startDate'] != null 
+            ? DateTime.fromMillisecondsSinceEpoch(filtersMap['startDate'] as int)
+            : null,
+          endDate: filtersMap['endDate'] != null 
+            ? DateTime.fromMillisecondsSinceEpoch(filtersMap['endDate'] as int)
+            : null,
+          cameraId: filtersMap['cameraId'] as String?,
+          eventType: filtersMap['eventType'] != null
+            ? EventType.values.firstWhere(
+                (type) => type.name == filtersMap['eventType'],
+                orElse: () => EventType.motion,
+              )
+            : null,
+          minAlarmScore: filtersMap['minAlarmScore'] as double?,
+        );
+      }
+    } catch (e) {
+      // Return null if preference doesn't exist or parsing fails
+    }
+    return null;
+  }
+
+  /// Save events filters preference
+  Future<void> saveEventsFilters(EventsFilters filters) async {
+    final filtersMap = <String, dynamic>{
+      'startDate': filters.startDate?.millisecondsSinceEpoch,
+      'endDate': filters.endDate?.millisecondsSinceEpoch,
+      'cameraId': filters.cameraId,
+      'eventType': filters.eventType?.name,
+      'minAlarmScore': filters.minAlarmScore,
+    };
+    await setUserPreference('events_filters', filtersMap);
   }
 
   /// Close database connection

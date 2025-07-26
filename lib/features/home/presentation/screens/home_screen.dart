@@ -29,31 +29,31 @@ class HomeScreen extends ConsumerWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
-                  connectionStatus.when(
-                    data: (connected) => connected ? Icons.wifi : Icons.wifi_off,
-                    loading: () => Icons.wifi,
-                    error: (_, __) => Icons.wifi_off,
-                  ),
-                  color: connectionStatus.when(
-                    data: (connected) => connected ? Colors.green : Colors.red,
-                    loading: () => Colors.orange,
-                    error: (_, __) => Colors.red,
-                  ),
+                  connectionStatus.isUnknown 
+                    ? Icons.wifi 
+                    : connectionStatus.isConnected 
+                      ? Icons.wifi 
+                      : Icons.wifi_off,
+                  color: connectionStatus.isUnknown 
+                    ? Colors.orange 
+                    : connectionStatus.isConnected 
+                      ? Colors.green 
+                      : Colors.red,
                   size: 20,
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  connectionStatus.when(
-                    data: (connected) => connected ? 'Connected' : 'Offline',
-                    loading: () => 'Connecting...',
-                    error: (_, __) => 'Error',
-                  ),
+                  connectionStatus.isUnknown 
+                    ? 'Connecting...' 
+                    : connectionStatus.isConnected 
+                      ? 'Connected' 
+                      : 'Offline',
                   style: TextStyle(
-                    color: connectionStatus.when(
-                      data: (connected) => connected ? Colors.green : Colors.red,
-                      loading: () => Colors.orange,
-                      error: (_, __) => Colors.red,
-                    ),
+                    color: connectionStatus.isUnknown 
+                      ? Colors.orange 
+                      : connectionStatus.isConnected 
+                        ? Colors.green 
+                        : Colors.red,
                     fontSize: 12,
                   ),
                 ),
