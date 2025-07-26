@@ -18,6 +18,10 @@ void main() {
       ),
     );
 
+    // Pump a few frames to let providers initialize
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
     // Verify that the app loads without crashing
     expect(find.byType(ZmNinjaApp), findsOneWidget);
   });

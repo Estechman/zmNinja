@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../home/domain/models/camera_model.dart';
 import '../widgets/camera_controls_widget.dart';
+import '../widgets/camera_video_player_widget.dart';
 
 /// Camera detail screen for individual camera viewing
 /// Displays full-screen camera feed with controls
@@ -30,10 +31,48 @@ class _CameraDetailScreenState extends ConsumerState<CameraDetailScreen> {
   @override
   void initState() {
     super.initState();
+    _initializeCameraData();
+  }
+
+  @override
+  void didUpdateWidget(CameraDetailScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Reinitialize camera data if the cameraId changed
+    if (oldWidget.cameraId != widget.cameraId) {
+      _initializeCameraData();
+    }
+  }
+
+  /// Initialize camera data based on the current cameraId
+  void _initializeCameraData() {
+    // Use real video streams for testing different formats
+    String streamUrl;
+    switch (widget.cameraId) {
+      case '1':
+        // Real MJPEG CCTV feed for testing
+        streamUrl = 'http://208.193.47.61/mjpg/video.mjpg';
+        break;
+      case '2':
+        // Real HLS stream for testing
+        streamUrl = 'https://ms7.mx-cd.net/dtv-11/198-989148/1Twente_TV.smil/chunklist_w954512639_b4292608_slNLD.m3u8';
+        break;
+      case '3':
+        // Fallback to demo MP4 stream
+        streamUrl = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4';
+        break;
+      default:
+        // Fallback to demo MP4 stream
+        streamUrl = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4';
+        break;
+    }
+    
     _mockCamera = CameraModel(
       id: widget.cameraId,
-      name: 'Camera ${widget.cameraId}',
-      streamUrl: 'rtsp://demo.stream/camera${widget.cameraId}',
+      name: widget.cameraId == '1' ? 'CCTV Feed (MJPEG)' : 
+            widget.cameraId == '2' ? 'Twente TV (HLS)' : 
+            widget.cameraId == '3' ? 'Garage (Demo)' :
+            'Side Yard (Demo)',
+      streamUrl: streamUrl,
       isOnline: true,
       isRecording: widget.cameraId == '1' || widget.cameraId == '4',
       width: 1920,
@@ -111,130 +150,41 @@ class _CameraDetailScreenState extends ConsumerState<CameraDetailScreen> {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            // Main video player placeholder
-            Container(
-              color: Colors.black,
-              child: Center(
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    // Mock video feed with animated gradient
-                    AnimatedContainer(
-                      duration: const Duration(seconds: 2),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            Colors.grey[800]!,
-                            Colors.grey[700]!,
-                            Colors.grey[900]!,
-                          ],
+            // Main video player using CameraVideoPlayerWidget
+            CameraVideoPlayerWidget(camera: _mockCamera),
+            
+            // Recording indicator overlay
+            if (_mockCamera.isRecording)
+              Positioned(
+                top: 16,
+                left: 16,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withValues(alpha: 0.9),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.fiber_manual_record,
+                        color: Colors.white,
+                        size: 12,
+                      ),
+                      SizedBox(width: 4),
+                      Text(
+                        'REC',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                    ),
-                    
-                    // Video placeholder content
-                    Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.play_circle_outline,
-                            color: Colors.white.withValues(alpha: 0.7),
-                            size: 80,
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'Live Stream Placeholder',
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.7),
-                              fontSize: 18,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            '${_mockCamera.width}x${_mockCamera.height} • ${_mockCamera.name}',
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.5),
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    // Stream status overlay
-                    Positioned(
-                      top: 16,
-                      right: 16,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.8),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Container(
-                              width: 8,
-                              height: 8,
-                              decoration: const BoxDecoration(
-                                color: Colors.red,
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            const Text(
-                              'LIVE',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                    // Recording indicator
-                    Positioned(
-                      top: 16,
-                      left: 16,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.red.withValues(alpha: 0.9),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.fiber_manual_record,
-                              color: Colors.white,
-                              size: 12,
-                            ),
-                            SizedBox(width: 4),
-                            Text(
-                              'REC',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
             
             // Camera controls (if not in fullscreen or controls are visible)
             if (!_isFullscreen || _showControls)

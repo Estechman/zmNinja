@@ -49,8 +49,6 @@ final camerasProvider = FutureProvider.autoDispose<List<CameraModel>>((ref) asyn
     }
     
     // Fallback to mock data if API and cache are not available
-    await Future.delayed(const Duration(milliseconds: 500));
-    
     return _getMockCameras();
   }
 });
@@ -89,8 +87,8 @@ List<CameraModel> _getMockCameras() {
   return [
     CameraModel(
       id: '1',
-      name: 'Front Door',
-      streamUrl: 'rtsp://demo.stream/camera1',
+      name: 'Front Door (Demo)',
+      streamUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
       isOnline: true,
       isRecording: true,
       hasPtz: false,
@@ -100,8 +98,8 @@ List<CameraModel> _getMockCameras() {
     ),
     CameraModel(
       id: '2',
-      name: 'Backyard',
-      streamUrl: 'rtsp://demo.stream/camera2',
+      name: 'Backyard (Demo)',
+      streamUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
       isOnline: true,
       isRecording: false,
       hasPtz: true,
@@ -111,8 +109,8 @@ List<CameraModel> _getMockCameras() {
     ),
     CameraModel(
       id: '3',
-      name: 'Living Room',
-      streamUrl: 'rtsp://demo.stream/camera3',
+      name: 'Garage (Demo)',
+      streamUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
       isOnline: false,
       isRecording: false,
       hasPtz: false,
@@ -122,8 +120,8 @@ List<CameraModel> _getMockCameras() {
     ),
     CameraModel(
       id: '4',
-      name: 'Driveway',
-      streamUrl: 'rtsp://demo.stream/camera4',
+      name: 'Side Yard (Demo)',
+      streamUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
       isOnline: true,
       isRecording: true,
       hasPtz: true,

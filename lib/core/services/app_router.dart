@@ -29,7 +29,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         name: 'camera_detail',
         builder: (context, state) {
           final cameraId = state.pathParameters['cameraId']!;
-          return CameraDetailScreen(cameraId: cameraId);
+          return CameraDetailScreen(
+            key: ValueKey('camera_$cameraId'),
+            cameraId: cameraId,
+          );
         },
       ),
       
