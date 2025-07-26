@@ -2,9 +2,6 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:flutter/material.dart';
-
-import '../../main.dart';
 
 /// Notification service provider for managing push notifications
 /// Handles Firebase Cloud Messaging and local notifications
@@ -188,32 +185,20 @@ class NotificationService {
 
   /// Navigate to specific event
   static void _navigateToEvent(String eventId) {
-    // Use global navigator key to navigate to event detail screen
-    final context = navigatorKey.currentContext;
-    if (context != null) {
-      // Import go_router for navigation
-      context.go('/event/$eventId');
-    }
+    // TODO: Implement navigation to event detail screen using router
+    // This would typically use the app router service
     print('Navigate to event: $eventId');
   }
 
   /// Navigate to specific camera
   static void _navigateToCamera(String cameraId) {
-    // Use global navigator key to navigate to camera detail screen
-    final context = navigatorKey.currentContext;
-    if (context != null) {
-      context.go('/camera/$cameraId');
-    }
+    // TODO: Implement navigation to camera detail screen using router
     print('Navigate to camera: $cameraId');
   }
 
   /// Navigate to events screen
   static void _navigateToEvents() {
-    // Use global navigator key to navigate to events screen
-    final context = navigatorKey.currentContext;
-    if (context != null) {
-      context.go('/events');
-    }
+    // TODO: Implement navigation to events screen using router
     print('Navigate to events screen');
   }
 

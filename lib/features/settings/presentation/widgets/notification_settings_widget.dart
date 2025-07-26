@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/models/app_settings_model.dart';
 import '../providers/settings_providers.dart';
-import '../../../notifications/presentation/providers/notification_providers.dart';
+import '../../../notifications/presentation/providers/notification_providers.dart' as notif;
 
 /// Notification settings widget for push notification preferences
 /// Manages notification options, sounds, and quiet hours
@@ -18,8 +18,8 @@ class NotificationSettingsWidget extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final notificationSettings = settings.notificationSettings;
-    final notificationPermissions = ref.watch(notificationPermissionsProvider);
-    final fcmToken = ref.watch(fcmTokenProvider);
+    final notificationPermissions = ref.watch(notif.notificationPermissionsProvider);
+    final fcmToken = ref.watch(notif.fcmTokenProvider);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -206,7 +206,7 @@ class NotificationSettingsWidget extends ConsumerWidget {
               child: ElevatedButton.icon(
                 onPressed: notificationSettings.enabled ? () {
                   // Test notification using the notification service
-                  final notificationService = ref.read(notificationServiceProvider);
+                  final notificationService = ref.read(notif.notificationServiceProvider);
                   notificationService.showLocalNotification(
                     id: DateTime.now().millisecondsSinceEpoch ~/ 1000,
                     title: 'Test Notification',
