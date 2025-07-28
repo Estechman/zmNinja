@@ -58,6 +58,24 @@ class NavigationDrawerWidget extends StatelessWidget {
           ),
           
           ListTile(
+            leading: const Icon(Icons.grid_view),
+            title: const Text('Montage'),
+            onTap: () {
+              Navigator.pop(context);
+              context.go('/montage');
+            },
+          ),
+          
+          ListTile(
+            leading: const Icon(Icons.timeline),
+            title: const Text('Timeline'),
+            onTap: () {
+              Navigator.pop(context);
+              context.go('/timeline');
+            },
+          ),
+          
+          ListTile(
             leading: const Icon(Icons.event),
             title: const Text('Events'),
             onTap: () {

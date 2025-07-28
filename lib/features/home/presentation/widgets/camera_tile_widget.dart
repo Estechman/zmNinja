@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/models/camera_model.dart';
+import '../../../montage/domain/models/montage_profile_model.dart';
 
 /// Individual camera tile widget for grid display
 /// Shows live camera feed with status indicators
@@ -220,5 +221,83 @@ class CameraTileWidget extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  Widget _buildAlarmStatusOverlay(AlarmStatus alarmStatus, int eventCount) {
+    if (alarmStatus == AlarmStatus.idle && eventCount == 0) {
+      return const SizedBox.shrink();
+    }
+
+    return Positioned(
+      top: 8,
+      right: 8,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 500),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: _getAlarmStatusColor(alarmStatus),
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            if (alarmStatus == AlarmStatus.alarmed)
+              BoxShadow(
+                color: Colors.red.withOpacity(0.5),
+                blurRadius: 8,
+                spreadRadius: 2,
+              ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              _getAlarmStatusIcon(alarmStatus),
+              size: 16,
+              color: Colors.white,
+            ),
+            if (eventCount > 0) ...[
+              const SizedBox(width: 4),
+              Text(
+                '$eventCount',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Color _getAlarmStatusColor(AlarmStatus status) {
+    switch (status) {
+      case AlarmStatus.alarmed:
+        return Colors.red;
+      case AlarmStatus.alert:
+        return Colors.orange;
+      case AlarmStatus.recording:
+        return Colors.green;
+      case AlarmStatus.offline:
+        return Colors.grey;
+      default:
+        return Colors.blue;
+    }
+  }
+
+  IconData _getAlarmStatusIcon(AlarmStatus status) {
+    switch (status) {
+      case AlarmStatus.alarmed:
+        return Icons.warning;
+      case AlarmStatus.alert:
+        return Icons.notification_important;
+      case AlarmStatus.recording:
+        return Icons.fiber_manual_record;
+      case AlarmStatus.offline:
+        return Icons.wifi_off;
+      default:
+        return Icons.info;
+    }
   }
 }

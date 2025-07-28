@@ -453,6 +453,27 @@ class EventsFiltersNotifier extends StateNotifier<EventsFilters> {
   Future<void> clearFilters() async {
     await updateFilters(const EventsFilters());
   }
+  
+  /// Update date range filter
+  Future<void> updateDateRange(DateTime startDate, DateTime endDate) async {
+    final newFilters = state.copyWith(
+      startDate: startDate,
+      endDate: endDate,
+    );
+    await updateFilters(newFilters);
+  }
+  
+  /// Update event type filter
+  Future<void> updateEventType(EventType eventType) async {
+    final newFilters = state.copyWith(eventType: eventType);
+    await updateFilters(newFilters);
+  }
+  
+  /// Update minimum alarm score filter
+  Future<void> updateMinAlarmScore(double minScore) async {
+    final newFilters = state.copyWith(minAlarmScore: minScore);
+    await updateFilters(newFilters);
+  }
 }
 
 /// Selected event notifier with validation

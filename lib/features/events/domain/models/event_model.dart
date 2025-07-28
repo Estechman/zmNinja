@@ -68,6 +68,12 @@ class EventModel {
     return (alarmFrames / frames) * 100;
   }
 
+  /// Monitor name alias for compatibility
+  String? get monitorName => cameraName;
+  
+  /// Monitor ID alias for compatibility  
+  String get monitorId => cameraId;
+
   /// Create copy of event with updated properties
   EventModel copyWith({
     String? id,

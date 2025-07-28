@@ -6,6 +6,10 @@ import '../../features/home/presentation/screens/home_screen.dart';
 import '../../features/camera_detail/presentation/screens/camera_detail_screen.dart';
 import '../../features/events/presentation/screens/events_screen.dart';
 import '../../features/events/presentation/screens/event_detail_screen.dart';
+import '../../features/events/presentation/screens/event_player_screen.dart';
+import '../../features/events/presentation/screens/timeline_screen.dart';
+import '../../features/montage/presentation/screens/montage_screen.dart';
+import '../../features/montage/presentation/screens/enhanced_montage_screen.dart';
 import '../../features/ptz/presentation/screens/ptz_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
 import '../../features/logs/presentation/screens/logs_screen.dart';
@@ -21,6 +25,27 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/home',
         name: 'home',
         builder: (context, state) => const HomeScreen(),
+      ),
+      
+      // Montage route - Enhanced montage view with drag-and-drop layouts
+      GoRoute(
+        path: '/montage',
+        name: 'montage',
+        builder: (context, state) => const MontageScreen(),
+      ),
+      
+      // Enhanced montage route - Advanced drag-and-drop layouts
+      GoRoute(
+        path: '/montage/enhanced',
+        name: 'enhanced_montage',
+        builder: (context, state) => const EnhancedMontageScreen(),
+      ),
+      
+      // Timeline route - Event visualization with interactive charts
+      GoRoute(
+        path: '/timeline',
+        name: 'timeline',
+        builder: (context, state) => const TimelineScreen(),
       ),
       
       // Camera detail route - Individual camera view with controls
@@ -50,6 +75,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final eventId = state.pathParameters['eventId']!;
           return EventDetailScreen(eventId: eventId);
+        },
+      ),
+      
+      // Event player route - Enhanced event playback with alarm frame navigation
+      GoRoute(
+        path: '/event/:eventId/player',
+        name: 'event_player',
+        builder: (context, state) {
+          final eventId = state.pathParameters['eventId']!;
+          return EventPlayerScreen(eventId: eventId);
         },
       ),
       

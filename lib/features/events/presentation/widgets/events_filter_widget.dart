@@ -96,7 +96,7 @@ class EventsFilterWidget extends ConsumerWidget {
 
   /// Clear all filters
   void _clearFilters(WidgetRef ref) {
-    ref.read(eventsFiltersProvider.notifier).state = const EventsFilters();
+    ref.read(eventsFiltersProvider.notifier).clearFilters();
   }
 
   /// Format date for display
@@ -121,9 +121,9 @@ class EventsFilterWidget extends ConsumerWidget {
     );
 
     if (dateRange != null) {
-      ref.read(eventsFiltersProvider.notifier).state = currentFilters.copyWith(
-        startDate: dateRange.start,
-        endDate: dateRange.end,
+      ref.read(eventsFiltersProvider.notifier).updateDateRange(
+        dateRange.start,
+        dateRange.end,
       );
     }
   }
@@ -159,9 +159,7 @@ class EventsFilterWidget extends ConsumerWidget {
               title: Text(type.name),
               onTap: () {
                 Navigator.pop(context);
-                final currentFilters = ref.read(eventsFiltersProvider);
-                ref.read(eventsFiltersProvider.notifier).state = 
-                    currentFilters.copyWith(eventType: type);
+                ref.read(eventsFiltersProvider.notifier).updateEventType(type);
               },
             );
           }).toList(),
@@ -207,9 +205,7 @@ class EventsFilterWidget extends ConsumerWidget {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              final currentFilters = ref.read(eventsFiltersProvider);
-              ref.read(eventsFiltersProvider.notifier).state = 
-                  currentFilters.copyWith(minAlarmScore: currentScore);
+              ref.read(eventsFiltersProvider.notifier).updateMinAlarmScore(currentScore);
             },
             child: const Text('Apply'),
           ),

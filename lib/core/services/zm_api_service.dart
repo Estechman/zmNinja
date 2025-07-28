@@ -126,7 +126,8 @@ class ZmApiService {
         'pass': password,
       });
       
-      if (response.data['success'] == true) {
+      final success = response.data['success'];
+      if (success == true || success == 'true' || success == 1 || success == '1') {
         _authToken = response.data['access_token'];
         _authHash = response.data['auth_hash'];
       } else {
@@ -146,7 +147,8 @@ class ZmApiService {
     
     try {
       final response = await _dio.get('/host/getVersion.json');
-      return response.statusCode == 200 && response.data['success'] == true;
+      final success = response.data['success'];
+      return response.statusCode == 200 && (success == true || success == 'true' || success == 1 || success == '1');
     } catch (e) {
       return false;
     }
@@ -156,7 +158,8 @@ class ZmApiService {
   Future<Map<String, dynamic>> getServerInfo() async {
     try {
       final response = await _dio.get('/host/getVersion.json');
-      if (response.data['success'] == true) {
+      final success = response.data['success'];
+      if (success == true || success == 'true' || success == 1 || success == '1') {
         return {
           'version': response.data['version'],
           'apiVersion': response.data['apiVersion'],
@@ -174,7 +177,8 @@ class ZmApiService {
     try {
       final response = await _dio.get('/monitors.json');
       
-      if (response.data['success'] != true) {
+      final success = response.data['success'];
+      if (success != true && success != 'true' && success != 1 && success != '1') {
         throw Exception('API returned error: ${response.data['message']}');
       }
       
@@ -197,6 +201,58 @@ class ZmApiService {
     } catch (e) {
       throw Exception('Failed to fetch cameras: $e');
     }
+  }
+
+  /// Get single camera/monitor by ID from ZoneMinder
+  Future<CameraModel> getCameraById(String cameraId) async {
+    try {
+      final response = await _dio.get('/monitors/$cameraId.json');
+      
+      // Debug: Print the actual API response to identify type issues
+      print('ZM API Response for camera $cameraId: ${response.data}');
+      
+      // Handle both string and boolean success responses from ZoneMinder API
+      final success = response.data['success'];
+      print('Success field type: ${success.runtimeType}, value: $success');
+      
+      if (success != true && success != 'true' && success != 1 && success != '1') {
+        throw Exception('API returned error: ${response.data['message'] ?? 'Unknown error'}');
+      }
+      
+      final monitorData = response.data['monitor'];
+      if (monitorData == null) {
+        throw Exception('Monitor not found');
+      }
+      
+      final monitor = monitorData['Monitor'] ?? monitorData;
+      print('Monitor data: $monitor');
+      
+      return CameraModel(
+        id: monitor['Id'].toString(),
+        name: monitor['Name']?.toString() ?? 'Unknown Camera',
+        streamUrl: _buildStreamUrl(monitor['Id'].toString()),
+        isOnline: _parseBooleanValue(monitor['Enabled']),
+        isRecording: monitor['Function'] != 'None' && monitor['Function'] != 'Monitor',
+        width: int.tryParse(monitor['Width']?.toString() ?? '0') ?? 1920,
+        height: int.tryParse(monitor['Height']?.toString() ?? '0') ?? 1080,
+        hasPtz: _parseBooleanValue(monitor['Controllable']),
+        function: _parseCameraFunction(monitor['Function']?.toString()),
+      );
+    } catch (e) {
+      print('Error in getCameraById: $e');
+      throw Exception('Failed to fetch camera $cameraId: $e');
+    }
+  }
+
+  /// Parse boolean values from ZoneMinder API (handles '1'/'0', 'true'/'false', etc.)
+  bool _parseBooleanValue(dynamic value) {
+    if (value == null) return false;
+    if (value is bool) return value;
+    if (value is int) return value == 1;
+    if (value is String) {
+      return value == '1' || value.toLowerCase() == 'true';
+    }
+    return false;
   }
 
   /// Parse camera function from ZoneMinder
@@ -261,15 +317,6 @@ class ZmApiService {
     return '$baseUrl/cgi-bin/nph-zms?mode=jpeg&monitor=$cameraId&scale=100&maxfps=30';
   }
 
-  /// Get camera by ID
-  Future<CameraModel> getCameraById(String cameraId) async {
-    try {
-      final response = await _dio.get('/api/monitors/$cameraId.json');
-      return CameraModel.fromJson(response.data['monitor']);
-    } catch (e) {
-      throw Exception('Failed to fetch camera $cameraId: $e');
-    }
-  }
 
   /// Get camera stream URL
   Future<String> getCameraStreamUrl(String cameraId) async {
@@ -400,7 +447,30 @@ class ZmApiService {
   Future<PtzCapabilities> getPtzCapabilities(String cameraId) async {
     try {
       final response = await _dio.get('/api/monitors/$cameraId/ptz.json');
-      return PtzCapabilities.fromJson(response.data);
+      
+      // Transform ZoneMinder API response to match PtzCapabilities model
+      final data = response.data;
+      
+      // Create capabilities object with proper defaults and type conversion
+      return PtzCapabilities(
+        canMove: _parseBool(data['CanMove'] ?? data['canMove'] ?? false),
+        canZoom: _parseBool(data['CanZoom'] ?? data['canZoom'] ?? false),
+        canFocus: _parseBool(data['CanFocus'] ?? data['canFocus'] ?? false),
+        canIris: _parseBool(data['CanIris'] ?? data['canIris'] ?? false),
+        canWhiteBalance: _parseBool(data['CanWhiteBalance'] ?? data['canWhiteBalance'] ?? false),
+        canPresets: _parseBool(data['CanPresets'] ?? data['canPresets'] ?? false),
+        canHome: _parseBool(data['CanHome'] ?? data['canHome'] ?? false),
+        canReset: _parseBool(data['CanReset'] ?? data['canReset'] ?? false),
+        canReboot: _parseBool(data['CanReboot'] ?? data['canReboot'] ?? false),
+        maxPresets: _parseInt(data['MaxPresets'] ?? data['maxPresets'] ?? 0),
+        minPan: _parseDouble(data['MinPan'] ?? data['minPan'] ?? -180.0),
+        maxPan: _parseDouble(data['MaxPan'] ?? data['maxPan'] ?? 180.0),
+        minTilt: _parseDouble(data['MinTilt'] ?? data['minTilt'] ?? -90.0),
+        maxTilt: _parseDouble(data['MaxTilt'] ?? data['maxTilt'] ?? 90.0),
+        minZoom: _parseDouble(data['MinZoom'] ?? data['minZoom'] ?? 1.0),
+        maxZoom: _parseDouble(data['MaxZoom'] ?? data['maxZoom'] ?? 10.0),
+        supportedCommands: _parseStringList(data['SupportedCommands'] ?? data['supportedCommands'] ?? []),
+      );
     } catch (e) {
       throw Exception('Failed to fetch PTZ capabilities: $e');
     }
@@ -502,5 +572,40 @@ class ZmApiService {
     } catch (e) {
       throw Exception('Failed to stop all PTZ operations: $e');
     }
+  }
+
+  /// Helper method to safely parse boolean values from API response
+  bool _parseBool(dynamic value) {
+    if (value is bool) return value;
+    if (value is String) return value.toLowerCase() == 'true' || value == '1';
+    if (value is int) return value != 0;
+    return false;
+  }
+
+  /// Helper method to safely parse integer values from API response
+  int _parseInt(dynamic value) {
+    if (value is int) return value;
+    if (value is String) return int.tryParse(value) ?? 0;
+    if (value is double) return value.toInt();
+    return 0;
+  }
+
+  /// Helper method to safely parse double values from API response
+  double _parseDouble(dynamic value) {
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) return double.tryParse(value) ?? 0.0;
+    return 0.0;
+  }
+
+  /// Helper method to safely parse string list from API response
+  List<String> _parseStringList(dynamic value) {
+    if (value is List) {
+      return value.map((e) => e.toString()).toList();
+    }
+    if (value is String) {
+      return value.split(',').map((e) => e.trim()).toList();
+    }
+    return [];
   }
 }

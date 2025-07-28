@@ -50,6 +50,9 @@ class PtzPreset {
     return parts.join(', ');
   }
 
+  /// Position string for display compatibility
+  String get position => id.toString();
+
   /// Create copy of preset with updated properties
   PtzPreset copyWith({
     int? id,

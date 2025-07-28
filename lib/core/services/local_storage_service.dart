@@ -7,6 +7,7 @@ import '../../features/home/domain/models/camera_model.dart';
 import '../../features/events/domain/models/event_model.dart';
 import '../../features/home/presentation/providers/home_providers.dart';
 import '../../features/events/presentation/providers/events_providers.dart';
+import '../../features/montage/domain/models/montage_profile_model.dart';
 
 /// Provider for local storage service
 final localStorageServiceProvider = Provider<LocalStorageService>((ref) {
@@ -87,6 +88,17 @@ class LocalStorageService {
         key TEXT PRIMARY KEY,
         value TEXT NOT NULL,
         lastUpdated INTEGER NOT NULL
+      )
+    ''');
+
+    // Montage profiles table
+    await db.execute('''
+      CREATE TABLE montage_profiles (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        cameraLayouts TEXT NOT NULL,
+        createdAt INTEGER NOT NULL,
+        updatedAt INTEGER
       )
     ''');
   }
@@ -342,6 +354,68 @@ class LocalStorageService {
       'minAlarmScore': filters.minAlarmScore,
     };
     await setUserPreference('events_filters', filtersMap);
+  }
+
+  /// Get montage profiles from local storage
+  Future<List<MontageProfile>> getMontageProfiles() async {
+    final db = await database;
+    final maps = await db.query('montage_profiles', orderBy: 'createdAt DESC');
+
+    return maps.map((map) => MontageProfile(
+      id: map['id'] as String,
+      name: map['name'] as String,
+      cameraLayouts: (json.decode(map['cameraLayouts'] as String) as List)
+          .map((layout) => CameraLayout.fromJson(layout as Map<String, dynamic>))
+          .toList(),
+      createdAt: DateTime.fromMillisecondsSinceEpoch(map['createdAt'] as int),
+      updatedAt: map['updatedAt'] != null 
+          ? DateTime.fromMillisecondsSinceEpoch(map['updatedAt'] as int)
+          : null,
+    )).toList();
+  }
+
+  /// Save montage profile to local storage
+  Future<void> saveMontageProfile(MontageProfile profile) async {
+    final db = await database;
+    await db.insert(
+      'montage_profiles',
+      {
+        'id': profile.id,
+        'name': profile.name,
+        'cameraLayouts': json.encode(profile.cameraLayouts.map((layout) => layout.toJson()).toList()),
+        'createdAt': profile.createdAt.millisecondsSinceEpoch,
+        'updatedAt': profile.updatedAt?.millisecondsSinceEpoch,
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  /// Delete montage profile from local storage
+  Future<void> deleteMontageProfile(String profileId) async {
+    final db = await database;
+    await db.delete(
+      'montage_profiles',
+      where: 'id = ?',
+      whereArgs: [profileId],
+    );
+  }
+
+  /// Get camera order from local storage
+  Future<List<String>> getCameraOrder() async {
+    try {
+      final orderJson = await getUserPreference<String>('camera_order');
+      if (orderJson == null) return [];
+      
+      final orderList = json.decode(orderJson) as List;
+      return orderList.cast<String>();
+    } catch (e) {
+      return [];
+    }
+  }
+
+  /// Save camera order to local storage
+  Future<void> saveCameraOrder(List<String> order) async {
+    await setUserPreference('camera_order', json.encode(order));
   }
 
   /// Close database connection

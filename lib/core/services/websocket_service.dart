@@ -4,6 +4,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'settings_service.dart';
+import '../../features/montage/domain/models/montage_profile_model.dart';
 
 /// WebSocket service provider for real-time ZoneMinder updates
 final websocketServiceProvider = Provider<WebSocketService>((ref) {
@@ -30,6 +31,8 @@ class WebSocketService {
   WebSocketChannel? _channel;
   StreamController<bool>? _connectionController;
   StreamController<Map<String, dynamic>>? _eventController;
+  StreamController<AlarmStatusUpdate>? _alarmStatusController;
+  StreamController<EventCountUpdate>? _eventCountController;
   Timer? _reconnectTimer;
   bool _isConnecting = false;
   
@@ -45,6 +48,18 @@ class WebSocketService {
   Stream<Map<String, dynamic>> get eventStream {
     _eventController ??= StreamController<Map<String, dynamic>>.broadcast();
     return _eventController!.stream;
+  }
+
+  /// Stream for alarm status updates
+  Stream<AlarmStatusUpdate> get alarmStatusStream {
+    _alarmStatusController ??= StreamController<AlarmStatusUpdate>.broadcast();
+    return _alarmStatusController!.stream;
+  }
+
+  /// Stream for event count updates
+  Stream<EventCountUpdate> get eventCountStream {
+    _eventCountController ??= StreamController<EventCountUpdate>.broadcast();
+    return _eventCountController!.stream;
   }
 
   /// Connect to ZoneMinder WebSocket endpoint
@@ -100,16 +115,78 @@ class WebSocketService {
   void _handleMessage(dynamic message) {
     try {
       final data = json.decode(message.toString()) as Map<String, dynamic>;
+      final type = data['type'] as String?;
       
-      // Process different message types
-      if (data['type'] == 'event') {
-        _eventController?.add(data);
-      } else if (data['type'] == 'alarm') {
-        _eventController?.add(data);
+      switch (type) {
+        case 'alarm':
+          _handleAlarmEvent(data);
+          break;
+        case 'event':
+          _handleNewEvent(data);
+          _eventController?.add(data);
+          break;
+        case 'monitor_status':
+          _handleMonitorStatus(data);
+          break;
+        default:
+          _eventController?.add(data);
       }
       
     } catch (e) {
       print('Error parsing WebSocket message: $e');
+    }
+  }
+
+  void _handleAlarmEvent(Map<String, dynamic> data) {
+    final monitorId = data['monitor_id'] as String?;
+    final alarmState = data['alarm_state'] as String?;
+    
+    if (monitorId != null && alarmState != null) {
+      _alarmStatusController?.add(AlarmStatusUpdate(
+        cameraId: monitorId,
+        status: _parseAlarmStatus(alarmState),
+        timestamp: DateTime.now(),
+      ));
+    }
+  }
+
+  void _handleNewEvent(Map<String, dynamic> data) {
+    final eventId = data['event_id'] as String?;
+    final monitorId = data['monitor_id'] as String?;
+    
+    if (eventId != null && monitorId != null) {
+      _eventCountController?.add(EventCountUpdate(
+        cameraId: monitorId,
+        newEventId: eventId,
+        timestamp: DateTime.now(),
+      ));
+    }
+  }
+
+  void _handleMonitorStatus(Map<String, dynamic> data) {
+    final monitorId = data['monitor_id'] as String?;
+    final status = data['status'] as String?;
+    
+    if (monitorId != null && status != null) {
+      _alarmStatusController?.add(AlarmStatusUpdate(
+        cameraId: monitorId,
+        status: _parseAlarmStatus(status),
+        timestamp: DateTime.now(),
+      ));
+    }
+  }
+
+  AlarmStatus _parseAlarmStatus(String status) {
+    switch (status.toLowerCase()) {
+      case 'alarm':
+      case 'alarmed':
+        return AlarmStatus.alarmed;
+      case 'alert':
+        return AlarmStatus.alert;
+      case 'recording':
+        return AlarmStatus.recording;
+      default:
+        return AlarmStatus.idle;
     }
   }
 
@@ -150,6 +227,8 @@ class WebSocketService {
     disconnect();
     _connectionController?.close();
     _eventController?.close();
+    _alarmStatusController?.close();
+    _eventCountController?.close();
     _reconnectTimer?.cancel();
   }
 }
