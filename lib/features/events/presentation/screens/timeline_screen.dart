@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../widgets/interactive_timeline_widget.dart';
+import '../widgets/timeline_navigation_widget.dart';
 import '../providers/events_providers.dart';
 import '../../domain/models/event_model.dart';
 import '../../../home/presentation/providers/home_providers.dart';
@@ -48,11 +49,27 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
         ],
       ),
       body: events.when(
-        data: (eventList) => InteractiveTimelineWidget(
-          events: eventList,
-          dateRange: _selectedDateRange,
-          selectedMonitor: _selectedMonitor,
-          onEventSelected: _onEventSelected,
+        data: (eventList) => Stack(
+          children: [
+            InteractiveTimelineWidget(
+              events: eventList,
+              dateRange: _selectedDateRange,
+              selectedMonitor: _selectedMonitor,
+              onEventSelected: _onEventSelected,
+            ),
+            
+            TimelineNavigationWidget(
+              onZoomIn: () {
+                // TODO: Connect to timeline zoom controls
+              },
+              onZoomOut: () {
+                // TODO: Connect to timeline zoom controls
+              },
+              onFit: () {
+                // TODO: Connect to timeline fit function
+              },
+            ),
+          ],
         ),
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stack) => Center(
