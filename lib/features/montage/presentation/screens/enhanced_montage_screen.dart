@@ -115,18 +115,14 @@ class _EnhancedMontageScreenState extends ConsumerState<EnhancedMontageScreen> {
       );
     }
 
-    final screenSize = MediaQuery.of(context).size;
-    final crossAxisCount = _calculateGridColumns(screenSize.width);
-    final childAspectRatio = _calculateAspectRatio(screenSize);
-
     if (_isDragMode) {
-      return _buildDraggableGrid(cameras, crossAxisCount, childAspectRatio);
+      return _buildDraggableGrid(cameras);
     } else {
-      return _buildStaticGrid(cameras, crossAxisCount, childAspectRatio);
+      return _buildStaticGrid(cameras);
     }
   }
 
-  Widget _buildDraggableGrid(List<CameraModel> cameras, int crossAxisCount, double childAspectRatio) {
+  Widget _buildDraggableGrid(List<CameraModel> cameras) {
     return Container(
       padding: const EdgeInsets.all(8),
       child: ReorderableWrap(
@@ -149,31 +145,39 @@ class _EnhancedMontageScreenState extends ConsumerState<EnhancedMontageScreen> {
     );
   }
 
-  Widget _buildStaticGrid(List<CameraModel> cameras, int crossAxisCount, double childAspectRatio) {
-    return GridView.builder(
-      padding: const EdgeInsets.all(8),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: crossAxisCount,
-        childAspectRatio: childAspectRatio,
-        crossAxisSpacing: 8,
-        mainAxisSpacing: 8,
-      ),
-      itemCount: cameras.length,
-      itemBuilder: (context, index) {
-        final camera = cameras[index];
-        return GestureDetector(
-          onTap: () => _onCameraTap(camera),
-          onLongPress: () => _onCameraLongPress(camera),
-          child: CameraTileWidget(camera: camera),
-        );
-      },
+  Widget _buildStaticGrid(List<CameraModel> cameras) {
+    return CustomScrollView(
+      slivers: [
+        SliverPadding(
+          padding: const EdgeInsets.all(8),
+          sliver: SliverGrid(
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              childAspectRatio: 16 / 9,
+              crossAxisSpacing: 8,
+              mainAxisSpacing: 8,
+            ),
+            delegate: SliverChildBuilderDelegate(
+              (context, index) {
+                final camera = cameras[index];
+                return GestureDetector(
+                  onTap: () => _onCameraTap(camera),
+                  onLongPress: () => _onCameraLongPress(camera),
+                  child: CameraTileWidget(camera: camera),
+                );
+              },
+              childCount: cameras.length,
+            ),
+          ),
+        ),
+      ],
     );
   }
 
   Widget _buildDraggableCameraTile(CameraModel camera) {
     final screenSize = MediaQuery.of(context).size;
-    final tileWidth = (screenSize.width - 32) / _calculateGridColumns(screenSize.width) - 8;
-    final tileHeight = tileWidth / _calculateAspectRatio(screenSize);
+    final tileWidth = (screenSize.width - 32) / 2 - 8;
+    final tileHeight = tileWidth / (16 / 9);
 
     return SizedBox(
       width: tileWidth,
@@ -202,17 +206,6 @@ class _EnhancedMontageScreenState extends ConsumerState<EnhancedMontageScreen> {
     );
   }
 
-  int _calculateGridColumns(double screenWidth) {
-    if (screenWidth > 1200) return 4;
-    if (screenWidth > 800) return 3;
-    if (screenWidth > 600) return 2;
-    return 1;
-  }
-
-  double _calculateAspectRatio(Size screenSize) {
-    // Maintain 16:9 aspect ratio for camera tiles
-    return 16 / 9;
-  }
 
   void _toggleDragMode() {
     setState(() {
@@ -500,7 +493,7 @@ class _EnhancedMontageScreenState extends ConsumerState<EnhancedMontageScreen> {
             ),
             ListTile(
               title: const Text('Grid Layout'),
-              subtitle: Text('${_calculateGridColumns(MediaQuery.of(context).size.width)} columns'),
+              subtitle: const Text('2 columns'),
               trailing: const Icon(Icons.chevron_right),
               onTap: () {
                 // TODO: Show grid layout options

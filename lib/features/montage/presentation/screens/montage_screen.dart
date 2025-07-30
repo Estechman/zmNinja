@@ -56,48 +56,52 @@ class _MontageScreenState extends ConsumerState<MontageScreen> {
 
   Widget _buildMontageGrid(List<CameraModel> cameras, List<String> cameraOrder) {
     final orderedCameras = _orderCameras(cameras, cameraOrder);
-    final screenSize = MediaQuery.of(context).size;
-    final isDesktop = screenSize.width > 840;
-    
-    int crossAxisCount;
-    if (isDesktop) {
-      crossAxisCount = cameras.length >= 4 ? 4 : cameras.length;
-    } else if (screenSize.width > 600) {
-      crossAxisCount = cameras.length >= 3 ? 3 : cameras.length;
-    } else {
-      crossAxisCount = cameras.length >= 2 ? 2 : 1;
-    }
 
     if (_isDragMode) {
-      return GridView.builder(
-        key: _gridKey,
-        padding: const EdgeInsets.all(16),
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: crossAxisCount,
-          crossAxisSpacing: 16,
-          mainAxisSpacing: 16,
-          childAspectRatio: 16 / 9,
-        ),
-        itemCount: orderedCameras.length,
-        itemBuilder: (context, index) {
-          final camera = orderedCameras[index];
-          return _buildDraggableCameraTile(camera, index);
-        },
+      return CustomScrollView(
+        slivers: [
+          SliverPadding(
+            padding: const EdgeInsets.all(16),
+            sliver: SliverGrid(
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                childAspectRatio: 16 / 9,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+              ),
+              delegate: SliverChildBuilderDelegate(
+                (context, index) {
+                  final camera = orderedCameras[index];
+                  return _buildDraggableCameraTile(camera, index);
+                },
+                childCount: orderedCameras.length,
+              ),
+            ),
+          ),
+        ],
       );
     } else {
-      return GridView.builder(
-        padding: const EdgeInsets.all(16),
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: crossAxisCount,
-          crossAxisSpacing: 16,
-          mainAxisSpacing: 16,
-          childAspectRatio: 16 / 9,
-        ),
-        itemCount: orderedCameras.length,
-        itemBuilder: (context, index) {
-          final camera = orderedCameras[index];
-          return _buildCameraTile(camera);
-        },
+      return CustomScrollView(
+        slivers: [
+          SliverPadding(
+            padding: const EdgeInsets.all(16),
+            sliver: SliverGrid(
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                childAspectRatio: 16 / 9,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+              ),
+              delegate: SliverChildBuilderDelegate(
+                (context, index) {
+                  final camera = orderedCameras[index];
+                  return _buildCameraTile(camera);
+                },
+                childCount: orderedCameras.length,
+              ),
+            ),
+          ),
+        ],
       );
     }
   }
